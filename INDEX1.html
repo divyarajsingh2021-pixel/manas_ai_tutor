@@ -1,67 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manas AI Tutor | LakeCity Hackathon</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;800&display=swap" rel="stylesheet">
+    <title>MANAS AI | IT Guru</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #020617; color: white; font-family: 'Outfit', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 24px; width: 90%; max-width: 500px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        #chat { height: 300px; overflow-y: auto; margin: 20px 0; text-align: left; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 15px; }
-        .msg { margin: 10px 0; padding: 10px; border-radius: 10px; line-height: 1.4; }
-        .ai { background: #334155; border-left: 4px solid #6366f1; }
-        .user { background: #4f46e5; margin-left: 15%; }
-        #mic { width: 70px; height: 70px; border-radius: 50%; border: none; background: #6366f1; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
-        .listening { background: #ef4444 !important; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        body { 
+            background: #020617; 
+            color: white; 
+            font-family: 'Outfit', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .card { 
+            background: #1e293b; 
+            padding: 2rem; 
+            border-radius: 30px; 
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center; 
+            border: 2px solid #6366f1; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        }
+        h2 { color: #818cf8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+        #chat { 
+            height: 280px; 
+            overflow-y: auto; 
+            background: #0f172a; 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 15px; 
+            text-align: left; 
+            border: 1px solid #334155;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        #mic { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            border: none; 
+            background: #6366f1; 
+            color: white; 
+            font-size: 32px; 
+            cursor: pointer; 
+            transition: 0.3s;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        #mic:hover { transform: scale(1.1); }
+        .listening { 
+            background: #ef4444 !important; 
+            animation: pulse 1s infinite; 
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.6) !important;
+        }
+        @keyframes pulse { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(1.1); } 
+            100% { transform: scale(1); } 
+        }
+        #status { margin-top: 15px; color: #94a3b8; font-weight: bold; font-size: 14px; }
+        .user-txt { color: #818cf8; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2 style="margin-top:0; color:#818cf8;">MANAS AI</h2>
-        <div id="chat"><div class="msg ai"><b>Guru:</b> Namaste! I am ready. Click the mic and ask me any IT question in Mewari or Hindi!</div></div>
-        <button id="mic" onclick="startRec()">🎤</button>
-        <p id="status" style="margin-top:15px; color:#94a3b8; font-size:0.8rem;">SYSTEM READY</p>
+        <h2>MANAS AI</h2>
+        <p style="margin:0; font-size:14px; color:#94a3b8;">Mewari IT Guru</p>
+        
+        <div id="chat">
+            Khamma Ghani! Main Manas hoon. <br><br>
+            Mic button dabao aur IT ke baare mein kuch bhi pucho!
+        </div>
+        
+        <button id="mic" onclick="startProcess()">🎤</button>
+        <p id="status">SYSTEM READY</p>
     </div>
 
     <script>
-        const KEY = "AIzaSyACld04lU7VGlrGQbPtyA5lscGiy7yNVN4";
-        let rec;
+        // Use speech synthesis for voice output
+        const synth = window.speechSynthesis;
 
-        if ('webkitSpeechRecognition' in window) {
-            rec = new webkitSpeechRecognition();
-            rec.lang = 'hi-IN';
-            rec.onstart = () => { document.getElementById('mic').className = 'listening'; document.getElementById('status').innerText = "LISTENING..."; };
-            rec.onend = () => { document.getElementById('mic').className = ''; document.getElementById('status').innerText = "PROCESSING..."; };
-            rec.onresult = (e) => { 
-                const t = e.results[0][0].transcript; 
-                addMsg(t, 'user'); 
-                callAI(t); 
-            };
-        }
-
-        function startRec() { window.speechSynthesis.cancel(); rec.start(); }
-        function addMsg(t, s) { const c = document.getElementById('chat'); c.innerHTML += `<div class="msg ${s}">${t}</div>`; c.scrollTop = c.scrollHeight; }
-
-        async function callAI(q) {
+        async function getAIResponse(userText) {
+            // FORCING Hindi and Mewari in the prompt
+            const systemPrompt = "You are an IT Guru named Manas. You must answer only in Hindi and Mewari script. Keep it to 2 short sentences. Question: ";
+            
             try {
-                // Using the v1 STABLE endpoint to avoid the "Model Not Found" error
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${KEY}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Explain in 2 simple sentences in Hindi/Mewari: " + q }] }] })
-                });
-                const d = await r.json();
-                const ans = d.candidates[0].content.parts[0].text;
-                addMsg(ans, 'ai');
-                const s = new SpeechSynthesisUtterance(ans); s.lang = 'hi-IN'; window.speechSynthesis.speak(s);
-                document.getElementById('status').innerText = "SYSTEM READY";
+                const url = `https://text.pollinations.ai/prompt/${encodeURIComponent(systemPrompt + userText)}?model=openai&cache=false`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Network issues");
+                const text = await response.text();
+                return text;
             } catch (err) {
-                addMsg("Error connecting. Please ensure your API key is active.", "ai");
-                document.getElementById('status').innerText = "ERROR";
+                return "Maafi chahu, network dheere chal ryo hai. Phir koshish karo sa.";
             }
         }
+
+        function startProcess() {
+            // Clear any old voice
+            synth.cancel();
+
+            const Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+            if (!Recognition) {
+                alert("Please use Google Chrome for this app.");
+                return;
+            }
+
+            const rec = new Recognition();
+            rec.lang = 'hi-IN'; // Listen for Hindi/Indian speech
+
+            rec.onstart = () => {
+                document.getElementById('mic').classList.add('listening');
+                document.getElementById('status').innerText = "LISTENING...";
+            };
+
+            rec.onresult = async (event) => {
+                const query = event.results[0][0].transcript;
+                const chatBox = document.getElementById('chat');
+                
+                // Show User Text
+                chatBox.innerHTML = `<div class="user-txt">Aap: ${query}</div><div><b>Guru is thinking...</b></div>`;
+                
+                // Get AI Answer
+                const answer = await getAIResponse(query);
+                
+                // Show AI Answer
+                chatBox.innerHTML = `<div class="user-txt">Aap: ${query}</div><div style="margin-top:10px;"><b>Guru:</b> ${answer}</div>`;
+                
+                // Trigger Voice
+                speak(answer);
+            };
+
+            rec.onend = () => {
+                document.getElementById('mic').classList.remove('listening');
+                document.getElementById('status').innerText = "READY";
+            };
+
+            rec.start();
+        }
+
+        function speak(text) {
+            // Clean the text from stars or hashtags
+            const cleanText = text.replace(/[*#]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Set language to Hindi
+            utterance.lang = 'hi-IN';
+            utterance.rate = 0.9; // Slightly slower for clarity
+            utterance.pitch = 1.0;
+
+            synth.speak(utterance);
+        }
+
+        // Voice list initialization (Chrome requirement)
+        window.speechSynthesis.getVoices();
     </script>
 </body>
 </html>
